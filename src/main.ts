@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { WrapResponseInterceptor } from './common/interceptors/wrap-response/wrap-response.interceptor';
 import { TimeoutInterceptor } from './common/interceptors/timeout/timeout.interceptor';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,6 +24,8 @@ async function bootstrap() {
     new TimeoutInterceptor(), 
   );
 
+  app.useGlobalFilters(new HttpExceptionFilter());
+
   const options = new DocumentBuilder()
     .setTitle('Task Management API') 
     .setDescription('API documentation for managing tasks') 
@@ -39,4 +42,4 @@ async function bootstrap() {
 
 }
 bootstrap();
-// بررسی شده
+//ok

@@ -7,12 +7,12 @@ import {
 import { timeStamp } from 'console';
 import { Response } from 'express';
 
-@Catch(HttpException) //add HttpException to process all exceptions that are instances of HTTP exception
+@Catch(HttpException) 
 export class HttpExceptionFilter<T extends HttpException>
   implements ExceptionFilter
 {
   catch(exception: T, host: ArgumentsHost) {
-    const ctx = host.switchToHttp(); //this switchToHttp method gives us access to the native inflight request to response objects
+    const ctx = host.switchToHttp(); 
     const response = ctx.getResponse<Response>();
 
     const status = exception.getStatus();

@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestj
 import { CreateTaskDto } from "./dto/create-task.dto";
 import { UpdateTaskDto } from "./dto/update-task.dto";
 import { TasksService } from "./tasks.service";
-import { PaginationQueryDto } from "src/common/dto/pagination-query.dto/pagination-query.dto";
+import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 
 @Controller('tasks')
 export class TasksController {
