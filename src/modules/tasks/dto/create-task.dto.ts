@@ -11,5 +11,3 @@ export class CreateTaskDto {
   @IsOptional()
   readonly completed?: boolean;
 }
-
-
