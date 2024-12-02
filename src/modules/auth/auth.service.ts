@@ -1,11 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity'
 import { Repository } from 'typeorm';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { AuthCredentialsDto } from './entities/auth-credential.dto';
+import { AuthCredentialsDto } from '../auth/dto/auth-credential.dto';
 
 @Injectable()
 export class AuthService {
@@ -15,17 +15,24 @@ export class AuthService {
         private readonly jwtService: JwtService,
     ) {}
 ;
-    async signUP(createUserDto: CreateUserDto):Promise<void> {
+    async signUp(createUserDto: CreateUserDto):Promise<{ message: string; userId: string }> {
         const { email , password } = createUserDto;
         const userExists = await this.userRepository.findOneBy({ email });
         if (userExists) {
-            throw new Error('User already exists');
+            throw new ConflictException('User already exists');
         }
 
-        const hashPassword = await bcrypt.hash(password, 10);
+        const SALT_ROUNDS = 10;
+        const hashPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-        const user = this.userRepository.create({ ...createUserDto, password: hashPassword });
-        await this.userRepository.save(user);
+        try {
+            const user = this.userRepository.create({ ...createUserDto, password: hashPassword });
+            await this.userRepository.save(user);
+    
+            return {message: "User created successfully", userId: user.id};
+        } catch (error) {
+            throw new BadRequestException(error.message || 'An error occurred while creating the user');
+        }
     }
 
     async signIn(authCredentialDto: AuthCredentialsDto): Promise<{accessToken: string}> {
@@ -47,11 +54,11 @@ export class AuthService {
         return { accessToken };
     }
 
-    async validateUserById(userId: string): Promise<User> {
+    async validateUserById(userId: string): Promise<Partial<User>> {
         const user = await this.userRepository.findOne({ where: { id: userId }});
         if (!user) {
-            throw new Error('User not found');
+            throw new NotFoundException('User not found');
         }
-        return user;
+        return {id: user.id, email: user.email, username: user.username};
     }
 }
