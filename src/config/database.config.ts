@@ -10,4 +10,3 @@ export default (): TypeOrmModuleOptions => ({
   synchronize: true,
   autoLoadEntities: true,
 });
-//ok
