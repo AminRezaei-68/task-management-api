@@ -7,12 +7,12 @@ import {
 import { timeStamp } from 'console';
 import { Response } from 'express';
 
-@Catch(HttpException) 
+@Catch(HttpException)
 export class HttpExceptionFilter<T extends HttpException>
   implements ExceptionFilter
 {
   catch(exception: T, host: ArgumentsHost) {
-    const ctx = host.switchToHttp(); 
+    const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
     const status = exception.getStatus();
