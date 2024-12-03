@@ -4,4 +4,3 @@ export default () => ({
     expiresIn: '60s',
   },
 });
-//ok
