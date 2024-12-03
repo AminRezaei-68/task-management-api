@@ -13,4 +13,3 @@ export class CommonModule implements NestModule {
     consumer.apply(LoggingMiddleware).forRoutes('*');
   }
 }
-// بررسی شده
