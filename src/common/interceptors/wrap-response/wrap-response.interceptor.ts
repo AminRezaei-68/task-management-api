@@ -10,8 +10,7 @@ import { Observable, map } from 'rxjs';
 export class WrapResponseInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     console.log('before...');
-    
-    return next.handle().pipe(map((data) => ({ data })));
 
+    return next.handle().pipe(map((data) => ({ data })));
   }
 }
