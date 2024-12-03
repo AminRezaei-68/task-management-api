@@ -24,4 +24,3 @@ export class ApiKeyGuard implements CanActivate {
     return authHeader === this.configService.get('API_KEY');
   }
 }
-// بررسی شده
