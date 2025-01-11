@@ -12,11 +12,11 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     usersService = {
-      findByEmail: jest.fn(), 
+      findByEmail: jest.fn(),
     };
 
     jwtService = {
-      sign: jest.fn(), 
+      sign: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -38,16 +38,19 @@ describe('AuthService', () => {
     };
     jest.spyOn(usersService, 'findByEmail').mockResolvedValue(mockUser);
 
-    const result = await authService.validateUserByEmail('test@example.com', '123456');
+    const result = await authService.validateUserByEmail(
+      'test@example.com',
+      '123456',
+    );
     expect(result).toEqual({ id: mockUser.id, email: mockUser.email });
   });
 
   it('Should return UnauthorizedException error for invalid email or password', async () => {
     jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
 
-    await expect(authService.validateUserByEmail('invalid@example.com', 'wrong-password')).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(
+      authService.validateUserByEmail('invalid@example.com', 'wrong-password'),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
   it('It should generate JWT token with user data', () => {

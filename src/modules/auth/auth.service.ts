@@ -1,78 +1,57 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../users/entities/user.entity';
-import { Repository } from 'typeorm';
-import { CreateUserDto } from '../users/dto/create-user.dto';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { SignupDto } from '../auth/dto/signup.dto';
 import * as bcrypt from 'bcrypt';
-import { AuthCredentialsDto } from '../auth/dto/auth-credential.dto';
+import { LoginDto } from '../auth/dto/login.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userservice: UsersService,
     private readonly jwtService: JwtService,
   ) {}
-  async signUp(
-    createUserDto: CreateUserDto,
-  ): Promise<{ message: string; userId: string }> {
-    const { email, password } = createUserDto;
-    const userExists = await this.userRepository.findOneBy({ email });
-    if (userExists) {
-      throw new ConflictException('User already exists');
+
+  async signup(signupDto: SignupDto): Promise<{ message: string }> {
+    const existingUser = await this.userservice.findByUsernameOrEmail(
+      signupDto.username,
+    );
+    if (existingUser) {
+      throw new UnauthorizedException('Username or email already exists');
     }
 
-    const SALT_ROUNDS = 10;
-    const hashPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    await this.userservice.create(signupDto);
 
-    try {
-      const user = this.userRepository.create({
-        ...createUserDto,
-        password: hashPassword,
-      });
-      await this.userRepository.save(user);
-
-      return { message: 'User created successfully', userId: user.id };
-    } catch (error) {
-      throw new BadRequestException(
-        error.message || 'An error occurred while creating the user',
-      );
-    }
+    return { message: 'User registered successfully' };
   }
 
-  async signIn(
-    authCredentialDto: AuthCredentialsDto,
-  ): Promise<{ accessToken: string }> {
-    const { email, password } = authCredentialDto;
+  async login(loginDto: LoginDto): Promise<{ message: string; token: string }> {
+    const user = await this.userservice.findByUsernameOrEmail(
+      loginDto.usernameOrEmail,
+      true,
+    );
 
-    const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('User not found');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Incorrect password');
     }
 
-    const payload = { sub: user.id };
-    const accessToken = await this.jwtService.sign(payload);
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      firstname: user.firstname,
+      lastname: user.lastname
+    };
+    const token = this.jwtService.sign(payload);
 
-    return { accessToken };
-  }
-
-  async validateUserById(userId: string): Promise<Partial<User>> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return { id: user.id, email: user.email, username: user.username };
+    return { message: 'Login successful', token };
   }
 }
