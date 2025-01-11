@@ -3,22 +3,23 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Task } from './entities/task.entity';
-import { Repository } from 'typeorm';
+import { Task, TaskDocument } from './schemas/task.schema';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { isValidObjectId, Model } from 'mongoose';
+
 
 @Injectable()
 export class TasksService {
   constructor(
-    @InjectRepository(Task) private readonly taskRepository: Repository<Task>,
+    @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
   ) {}
 
   async findAll(paginationQuery: PaginationQueryDto): Promise<Task[]> {
     const { limit, offset } = paginationQuery;
-    return this.taskRepository.find({ skip: offset, take: limit });
+    return this.taskModel.find().skip(offset).limit(limit).exec();
   }
 
   async findOne(id: number): Promise<Task> {
@@ -26,7 +27,7 @@ export class TasksService {
       throw new BadRequestException('ID must be a positive number.');
     }
 
-    const task = await this.taskRepository.findOne({ where: { id } });
+    const task = await this.taskModel.findOne({id}).exec();
     if (!task) {
       throw new NotFoundException(`Task with id ${id} not found.`);
     }
@@ -34,32 +35,34 @@ export class TasksService {
     return task;
   }
 
-  create(createTaskDto: CreateTaskDto): Promise<Task> {
-    const task = this.taskRepository.create(createTaskDto);
-    return this.taskRepository.save(task);
+  async create(createTaskDto: CreateTaskDto, author: string): Promise<Task> {
+    const task = new this.taskModel({...createTaskDto, author: author});
+    return await task.save();
   }
 
-  async update(id: number, updateTaskDto: UpdateTaskDto): Promise<Task> {
-    const task = await this.taskRepository.preload({
+  async update(id: number, updateTaskDto: UpdateTaskDto): Promise <TaskDocument> {
+    const task = await this.taskModel.findByIdAndUpdate(
       id,
-      ...updateTaskDto,
-    });
-
+      updateTaskDto,
+      { new: true },
+    );
     if (!task) {
       throw new NotFoundException(`Task with id ${id} not found.`);
     }
 
-    return this.taskRepository.save(task);
+    return task;
   }
 
   async remove(id: number): Promise<{ message: string }> {
-    const task = await this.taskRepository.findOne({ where: { id } });
+    if (!isValidObjectId(id)) {
+      throw new BadRequestException('Invalid ID format.');
+    }
+    const result = await this.taskModel.findByIdAndDelete(id);
 
-    if (!task) {
+
+    if (!result) {
       throw new NotFoundException(`Task with id ${id} not found.`);
     }
-
-    await this.taskRepository.remove(task);
 
     return { message: `Task with ID "${id}" successfully deleted.` };
   }
