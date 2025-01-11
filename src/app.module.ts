@@ -34,6 +34,7 @@ import { UsersModule } from './modules/users/users.module';
 import appConfig from './config/app.config';
 import jwtConfig from './config/jwt.config';
 import databaseConfig from './config/database.config';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -42,13 +43,17 @@ import databaseConfig from './config/database.config';
       envFilePath: '.env',
       load: [appConfig, jwtConfig, databaseConfig],
     }),
+
     TypeOrmModule.forRootAsync({
       useFactory: async () => databaseConfig(),
     }),
+
+    MongooseModule.forRoot(`mongodb://${process.env.MONGO_DATABASE_HOST}:${process.env.MONGO_DATABASE_PORT}/${process.env.MONGO_DATABASE_NAME}`),
+    
     TasksModule,
     AuthModule,
     UsersModule,
   ],
 })
 export class AppModule {}
-//ok
+
